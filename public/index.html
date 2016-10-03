@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>A MAZE</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" media="screen" title="no title" charset="utf-8">
+        <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="main.css">
+        <script src="inc/phaser.min.js"></script>
+    </head>
+    <body>
+        <div id="top">
+            <div id="current">
+                Génération n°<span id="generation"></span> <br>
+                Finesse <span id="finesse"></span> <br>
+            </div>
+            <h2>Genetic Algorithm Maze Resolver</h2>
+            <button id='generate' class="btn btn-default">Generate <bold>new</bold> Maze</button>
+            <button id='start' class="btn btn-valid">Start!</button>
+            Maze Size: <input type="number" id="msWait" value="0"> (Activate when Generate is pressed)
+        </div>
+        <canvas id="mainFrame">
+            You don't support html5 canvas :/ sorry. Get a decent browser maybe?
+        </canvas>
+    </body>
+    <script src="buildMaze.js" async></script>
+    <script src="solveMaze.js" async></script>
+</html>
