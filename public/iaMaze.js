@@ -28,7 +28,7 @@ var maxGenerations = 50000;
 var populationSize = 200;
 
 var mutateRate = 0.2;
-var bestRate = 0.4;
+var bestRate = 0.9;
 var worstRate = 0.05;
 
 /*To display*/
@@ -195,7 +195,7 @@ var caclulFitnessMember = function(member, cb){
             }
             if(member.fitness > genFitness){
                 genFitness = fitnessMember;
-                curToDisplay = path;
+                curToDisplay = member.genes;
             }
             cb(member);
         }
