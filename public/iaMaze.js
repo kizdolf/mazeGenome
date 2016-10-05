@@ -24,12 +24,12 @@
 /* Define */
 var moves = ['top' ,'left' ,'right' ,'bot'];
 
-var maxGenerations = 5000;
-var populationSize = 100;
+var maxGenerations = 50000;
+var populationSize = 200;
 
 var mutateRate = 0.2;
 var bestRate = 0.4;
-var worstRate = 0.2;
+var worstRate = 0.05;
 
 /*To display*/
 var pathToDisplay;
@@ -44,25 +44,32 @@ var printOne = function(cb){
     // console.log(topFitness);
     var pos = [1, 1];
     var newPos;
+    var color;
     if(pathToDisplay){
-        pathToDisplay.forEach(function(step){
+        pathToDisplay.forEach(function(step, i){
+            if(i == pathToDisplay.length - 1)
+                color = '#17ffb6';
+            else
+                color = 'orange';
             newPos = getNewPos(pos, step);
         	ctx.clearRect((newPos[0] * pxDim), (newPos[1] * pxDim), pxDim, pxDim);
-            ctx.fillStyle = 'orange';
+            ctx.fillStyle = color;
             ctx.fillRect((newPos[0] * pxDim), (newPos[1] * pxDim), pxDim, pxDim);
             pos = newPos;
         });
     }
     pos = [1, 1];
-    curToDisplay.forEach(function(step){
-        newPos = getNewPos(pos, step);
-    	ctx.clearRect((newPos[0] * pxDim), (newPos[1] * pxDim), pxDim, pxDim);
-        ctx.fillStyle = 'blue';
-        ctx.fillRect((newPos[0] * pxDim), (newPos[1] * pxDim), pxDim, pxDim);
-        pos = newPos;
-    });
     setTimeout(function(){
-        cb();
+        curToDisplay.forEach(function(step){
+            newPos = getNewPos(pos, step);
+        	ctx.clearRect((newPos[0] * pxDim), (newPos[1] * pxDim), pxDim, pxDim);
+            ctx.fillStyle = 'blue';
+            ctx.fillRect((newPos[0] * pxDim), (newPos[1] * pxDim), pxDim, pxDim);
+            pos = newPos;
+        });
+        setTimeout(function(){
+            cb();
+        },0);
     },0);
 };
 var clearPath = function(){
@@ -72,15 +79,30 @@ var clearPath = function(){
     showMaze(publicMaze, start, end);
 };
 
+var nextDir = function(maze, x, y){
+	var choices = [];
+	if((x - 2) >= 0) choices.push("left");
+	if((x + 2) < mazeSize) choices.push("right");
+	if((y - 2) >= 0) choices.push("top");
+	if((y + 2) < mazeSize) choices.push("bot");
+
+	if(choices.length === 0) return(false);
+	else return(choices[Math.floor((Math.random() * choices.length))]);
+};
+
 
 var createRandomMember = function(){
     var minLen = (mazeSize - 2) + (mazeSize - 2 - 1);
     var maxLen = (mazeSize - 2) * (mazeSize / 2);
     var solution = [];
-    var len = Math.floor(Math.random() * (maxLen - minLen)) + minLen;
+    var pos = [1, 1];
+    var len = maxLen;
+    // var len = Math.floor(Math.random() * (maxLen - minLen)) + minLen;
     for (var i = 0; i < len; i++) {
-        var randomDir = moves[Math.floor(Math.random() * (moves.length))];
+        var randomDir = nextDir(publicMaze, pos[0], pos[1]);
         solution.push(randomDir);
+        var nPos = getNewPos(pos, randomDir);
+        pos = nPos;
     }
     return solution;
 };
@@ -155,13 +177,15 @@ var caclulFitnessMember = function(member, cb){
         if(visu[step] === true && notGoingBack(step)){
             pos = getNewPos(pos, step);
             previous = step;
-            fitnessMember++;
+            // fitnessMember++;
+
             path.push(step);
             if(pos[0] == end[0] && pos[1] == end[1]){
                 console.log('DONE');
                 cb(path);
             }
         }else{
+            fitnessMember = path.length;
             member.path = path;
             member.fitness = fitnessMember;
             //toDisplay
@@ -229,12 +253,16 @@ var crossingPool = function(generation, cb){
     for (var i = 0; i < nbMissingChlidren; i++){
         var dad = generation[Math.floor(Math.random() * generation.length)];
         var mom = generation[Math.floor(Math.random() * generation.length)];
-        var halfDad = dad.genes.slice(0, (dad.genes.length / 2));
-        var halfMom = mom.genes.slice((mom.genes.length / 2), (mom.genes.length - 1));
+        // var halfDad = dad.genes.slice(0, (dad.genes.length / 2));
+        // var halfMom = mom.genes.slice((mom.genes.length / 2), (mom.genes.length - 1));
+        var halfDad = dad.genes.slice(0, (dad.fitness / 2));
+        var halfMom = mom.genes.slice((mom.fitness / 2), (mom.fitness - 1));
         var child = halfDad.concat(halfMom);
+        // var child = halfDad;
         var minLen = (mazeSize - 2) + (mazeSize - 2 - 1);
         var maxLen = (mazeSize - 2) * (mazeSize / 2);
-        var len = Math.floor(Math.random() * (maxLen - minLen)) + minLen;
+        var len = maxLen;
+        // var len = Math.floor(Math.random() * (maxLen - minLen)) + minLen;
         for (var j = child.length; j < len; j++) {
             var randomDir = moves[Math.floor(Math.random() * (moves.length))];
             child.push(randomDir);
@@ -250,6 +278,12 @@ var crossingPool = function(generation, cb){
     }
 };
 
+var statsToHtml = function(loop, fitness){
+    $('#generation').html(loop);
+    $('#finesse').html(fitness);
+    $('#pathLen').html(pathToDisplay.length);
+    $('#curPathLen').html(curToDisplay.length);
+};
 
 var main = function(generation, loop){
     printOne(function(){
@@ -258,11 +292,13 @@ var main = function(generation, loop){
                 if(fitness === false){ //DONE!!
                     console.log('OUUUUii'); //which is the ultime path.
                     console.log(generationFit); //which is the ultime path.
-                    process.nextTick(function(){
-                        return;
+                    pathToDisplay = generationFit;
+                    loop = maxGenerations;
+                    printOne(function(){
                     });
+                    exit(); //fake cmd to kill callstack.
                 }else{
-                    console.log(loop + ' | fitness == ' + fitness);
+                    statsToHtml(loop, fitness);
                     // console.log(generationFit);
                     generationFit = generationFit.sort(function(a, b){return (a.fitness > b.fitness) ? -1 : 1; });
                     getBestsParents(generationFit, function(bestParents){
